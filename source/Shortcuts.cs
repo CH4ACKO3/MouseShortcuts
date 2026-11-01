@@ -34,7 +34,7 @@ namespace RightClickClose
                 tooltip: () => "仅限制遣散快捷键，从上次成功遣散计算间隔；期间滚动不重新计时。默认 0.1 秒，设为 0 不限制。不影响开店、叫号、关店、对话和动画跳过。");
             CloseWindow = Define(config, "close_window", "Mouse1", "界面", "关闭没有原版交互的区域");
             PreferContainer = config.Define("prefer_recent_container", true, "物品", () => "优先放进最新打开的容器",
-                () => "营业前或没有顾客时也记录容器，新顾客到来时清空标记。上方向优先选择仍打开的最新容器，放不下时不回退；无标记时按区域配置移动。");
+                () => "随时记录最新打开的容器，新顾客到来时清空标记。上方向将物品放入该容器；已在其中的物品移到交易柜台。目标放不下时留在原处。无标记时按区域配置移动。");
             ItemRoutes.Init(config);
             AutoRotate = config.Define("auto_rotate_drag", true, "物品", () => "拖拽放置时自动尝试旋转",
                 () => "当前方向放不下时，在同一落点尝试其他三个方向，不自动翻面。预览临时旋转，放下时才应用；手动旋转仍可用。");

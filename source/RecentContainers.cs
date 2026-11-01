@@ -29,6 +29,13 @@ namespace RightClickClose
                 if (inventories.Count == 0) continue;
                 foreach (var owner in window.parentItems)
                     if (owner == item || GraphUtils.FindParentEquals(owner, item)) return true;
+                if (inventories.Contains(item.parentInventory))
+                {
+                    var counter = EmporiumEntry.Instance.backInvinvElement;
+                    if (counter == null) return true;
+                    inventories.Clear();
+                    inventories.Add(counter);
+                }
                 foreach (var inventory in inventories)
                 {
                     if (item.parentInventory == inventory) return true;
@@ -41,7 +48,6 @@ namespace RightClickClose
                         break;
                     }
                 }
-                // A failed container insertion must never unexpectedly offer the item to the customer.
                 return true;
             }
             return false;
