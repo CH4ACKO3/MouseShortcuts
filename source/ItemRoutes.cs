@@ -2,9 +2,10 @@ namespace RightClickClose
 {
     internal static class ItemRoutes
     {
-        internal enum Destination { 不移动, 主物品栏, 出售柜台, 买入柜台, 展示窗, 垃圾桶 }
+        internal enum Destination { 不移动, 主物品栏, 出售柜台, 买入柜台, 展示窗, 垃圾桶, 外出背包, 外出地面, 人物货架, 人物待买区, 人物待卖区 }
 
         private static ConfigEntry<Destination>[] main, sale, display, purchase, pendingPurchase, other;
+        private static ConfigEntry<Destination>[] ground, carried, outsideSale, outsideOther, merchantStock, merchantBuy, merchantSell;
 
         internal static void Init(ModConfig config)
         {
@@ -14,35 +15,77 @@ namespace RightClickClose
             purchase = Define(config, "purchase", "买入柜台／顾客侧", Destination.不移动, Destination.出售柜台);
             pendingPurchase = Define(config, "pending_purchase", "交易柜台（未买下物品）", Destination.买入柜台, Destination.出售柜台);
             other = Define(config, "other", "其他容器／区域", Destination.出售柜台, Destination.主物品栏);
+            ground = Define(config, "outside_ground", "外出地面", Destination.外出背包, Destination.不移动);
+            carried = Define(config, "outside_carried", "外出背包／口袋", Destination.出售柜台, Destination.外出地面);
+            outsideSale = Define(config, "outside_sale", "外出交易柜台（自有物品）", Destination.不移动, Destination.外出背包);
+            outsideOther = Define(config, "outside_other", "外出其他容器／区域", Destination.外出背包, Destination.外出地面);
+            merchantStock = Define(config, "merchant_stock", "人物交易货架", Destination.不移动, Destination.人物待买区);
+            merchantBuy = Define(config, "merchant_buy", "人物交易待买区", Destination.人物货架, Destination.不移动);
+            merchantSell = Define(config, "merchant_sell", "人物交易待卖区", Destination.不移动, Destination.主物品栏);
         }
 
         private static ConfigEntry<Destination>[] Define(ModConfig config, string key, string label, Destination up, Destination down)
             => new[]
             {
                 config.DefineEnum("route_" + key + "_up", up, "区域与滚轮目标", () => label + " ↑",
-                    () => "没有优先的新容器时，上方向快捷键要移入的位置。未买下的物品只能在两侧柜台间移动，易物保持原版整单规则。"),
+                    () => "没有优先的新容器时，上方向快捷键要移入的位置。外出时主物品栏指向背包；人物交易时出售柜台指向待卖区。未买下的物品只在交易区域内选择和撤回。"),
                 config.DefineEnum("route_" + key + "_down", down, "区域与滚轮目标", () => label + " ↓",
                     () => "下方向快捷键要移入的位置。垃圾桶是实际容器，不直接销毁；放不下时留在原处。")
             };
 
-        internal static GameInventory Resolve(GameItem item, bool up)
+        internal static GameCharacterItem Merchant
+            => OverlayHandler.current != null && OverlayHandler.current.barterWindow?.IsVisible() == true
+                ? OverlayHandler.current.currentBarterCharacter : null;
+
+        internal static bool IsOutside => MapUIManager.Instance != null && MapUIManager.Instance.isOutside;
+
+        internal static GraphNodeStorage Resolve(GameItem item, bool up)
         {
             var entry = EmporiumEntry.Instance;
             var source = item.parentInventory;
-            var route = source == entry.invElement ? main :
+            var merchant = Merchant;
+            var route = merchant != null && source == merchant.barterInventory ? merchantStock :
+                merchant != null && source == merchant.barterBuyInventory ? merchantBuy :
+                merchant != null && source == merchant.barterSellInventory ? merchantSell :
+                IsOutside && source == entry.afterhourInventory ? ground :
+                IsOutside && (Inside(source, entry.afterhourPocketSlotInvBackpack) ||
+                    Inside(source, entry.afterhourPocketSlotInvLeft) || Inside(source, entry.afterhourPocketSlotInvRight)) ? carried :
+                IsOutside && GeneralHelper.IsItemOwned(item) &&
+                    (source == entry.backInvinvElement || source == entry.frontInvinvElement) ? outsideSale :
+                source == entry.invElement ? main :
                 source == entry.showcaseElement ? display :
                 source == entry.frontInvinvElement ? purchase :
-                source == entry.backInvinvElement ? (GeneralHelper.IsItemOwned(item) ? sale : pendingPurchase) : other;
+                source == entry.backInvinvElement ? (GeneralHelper.IsItemOwned(item) ? sale : pendingPurchase) :
+                IsOutside ? outsideOther : other;
             switch (route[up ? 0 : 1].Value)
             {
-                case Destination.主物品栏: return entry.invElement;
-                case Destination.出售柜台: return entry.backInvinvElement;
-                case Destination.买入柜台: return entry.frontInvinvElement;
-                case Destination.展示窗: return entry.showcaseElement;
+                case Destination.主物品栏: return IsOutside ? Backpack() : entry.invElement;
+                case Destination.出售柜台: return merchant != null ? merchant.barterSellInventory : Visible(entry.backInvinvElement);
+                case Destination.买入柜台: return Visible(entry.frontInvinvElement);
+                case Destination.展示窗: return IsOutside ? null : entry.showcaseElement;
                 case Destination.垃圾桶:
-                    return item != entry.trashcan ? entry.trashcan?.contentWindow?.child as GameInventory : null;
+                    return !IsOutside && item != entry.trashcan ? entry.trashcan?.contentWindow?.child as GameInventory : null;
+                case Destination.外出背包: return IsOutside ? Backpack() : null;
+                case Destination.外出地面: return IsOutside ? Visible(entry.afterhourInventory) : null;
+                case Destination.人物货架: return merchant?.barterInventory;
+                case Destination.人物待买区: return merchant?.barterBuyInventory;
+                case Destination.人物待卖区: return merchant?.barterSellInventory;
                 default: return null;
             }
+        }
+
+        private static bool Inside(GraphNodeStorage source, GraphNodeStorage root)
+            => root != null && (source == root || GraphUtils.FindParentEquals(source, root));
+
+        private static GameInventory Visible(GameInventory inventory)
+            => inventory is PixelElement element && element.handler != null && element.handler.gameObject.activeInHierarchy
+                ? inventory : null;
+
+        private static GraphNodeStorage Backpack()
+        {
+            var slot = EmporiumEntry.Instance.afterhourPocketSlotInvBackpack;
+            return Visible(slot) != null && slot.childItem != null && GeneralHelper.IsItemEffectivelyOwned(slot.childItem)
+                ? slot.childItem : null;
         }
     }
 }

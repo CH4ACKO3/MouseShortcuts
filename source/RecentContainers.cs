@@ -31,6 +31,7 @@ namespace RightClickClose
                     if (owner == item || GraphUtils.FindParentEquals(owner, item)) return true;
                 if (inventories.Contains(item.parentInventory))
                 {
+                    if (ItemRoutes.IsOutside || ItemRoutes.Merchant != null) return false;
                     var counter = EmporiumEntry.Instance.backInvinvElement;
                     if (counter == null) return true;
                     inventories.Clear();

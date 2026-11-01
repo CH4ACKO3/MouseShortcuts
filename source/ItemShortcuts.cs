@@ -18,7 +18,7 @@ namespace RightClickClose
         {
             var store = StoreUIManager.Instance;
             var entry = EmporiumEntry.Instance;
-            if (store == null || entry == null || MapUIManager.Instance == null || MapUIManager.Instance.isOutside ||
+            if (store == null || entry == null || MapUIManager.Instance == null ||
                 store.isShootingMode || store.isMagnifyingMode || NegociationUIManager.IsTradeLocked() ||
                 ItemMouseDragHandler.current == null || !ItemMouseDragHandler.current.enabled)
                 return false;
@@ -61,10 +61,13 @@ namespace RightClickClose
                 else
                 {
                     var client = PlayerStore.Instance?.currentClientInstance;
+                    var merchant = ItemRoutes.Merchant;
+                    var location = MapUIManager.Instance.Current;
                     var moves = targets.ConvertAll(target => (Item: target, Home: target.parentInventory, Amount: target.unitCount));
                     foreach (var move in moves)
                     {
-                        if (PlayerStore.Instance?.currentClientInstance != client || NegociationUIManager.IsTradeLocked()) break;
+                        if (PlayerStore.Instance?.currentClientInstance != client || ItemRoutes.Merchant != merchant ||
+                            MapUIManager.Instance.Current != location || NegociationUIManager.IsTradeLocked()) break;
                         if (IsLive(move.Item) && move.Item.parentInventory == move.Home)
                             Move(move.Item, forward, move.Amount);
                     }
@@ -108,11 +111,20 @@ namespace RightClickClose
             if (amount < 1) return;
             var entry = EmporiumEntry.Instance;
             bool owned = GeneralHelper.IsItemOwned(item);
-            if (owned && forward && RecentContainers.TryStore(item, amount)) return;
+            bool pending = item.IsTag(GameCharacterItem.TAG_NOT_PURCHASED);
+            if (owned && !pending && forward && RecentContainers.TryStore(item, amount)) return;
             var destination = ItemRoutes.Resolve(item, forward);
             if (destination == null) return;
+            var merchant = ItemRoutes.Merchant;
+            bool merchantPurchase = merchant != null &&
+                (item.parentInventory == merchant.barterInventory || item.parentInventory == merchant.barterBuyInventory);
             var client = PlayerStore.Instance?.currentClientInstance?.GetClientBlueprint();
-            if (!owned)
+            if (merchantPurchase)
+            {
+                if (destination != merchant.barterInventory && destination != merchant.barterBuyInventory) return;
+            }
+            else if (pending) return;
+            else if (!owned)
             {
                 if (client == null || client.isBusinessComplete ||
                     (item.parentInventory != entry.frontInvinvElement && item.parentInventory != entry.backInvinvElement)) return;
@@ -127,7 +139,6 @@ namespace RightClickClose
                 // Selecting a destination never grants ownership or bypasses the purchase step.
                 if (destination != entry.backInvinvElement && destination != entry.frontInvinvElement) return;
             }
-            if (!GeneralHelper.MayPlayerInsertInto(destination)) return;
             if (item.parentInventory == destination)
             {
                 // Re-select the buying/selling side for mixed customers without moving the item again.
@@ -138,8 +149,10 @@ namespace RightClickClose
                 }
                 return;
             }
+            if (destination == item || GraphUtils.FindParentEquals(destination, item)) return;
             var slot = destination.TryFindOneValidInventorySlot(item);
-            if (slot == null || !slot.IsValid() || slot.numTransfer <= 0) return;
+            if (slot == null || !slot.IsValid() || slot.numTransfer <= 0 ||
+                !GeneralHelper.MayPlayerInsertInto(slot.inventory)) return;
             // Native transfer performs capacity/ownership checks and the counter's offer callbacks.
             if (slot.TryAcceptOnce(amount) > 0)
                 AudioManager.Instance.TryPlayOne(item.soundDragStart, item.soundDragEnd);

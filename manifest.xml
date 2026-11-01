@@ -3,7 +3,7 @@
   <ID>ch4acko3_right_click_close</ID>
   <Name>鼠标快捷操作 / Mouse Shortcuts</Name>
   <Author>CH4ACKO3</Author>
-  <ModVersion>1.6.8</ModVersion>
+  <ModVersion>1.6.9</ModVersion>
   <Description>可配置鼠标快捷键和各区域滚轮目标。拖拽格子放不下时自动尝试旋转并同步预览，放下前不改变拖拽方向。默认右键／下滚推进对话，仅右键成交，上滚遣散；物品上滚优先放进新开的容器。保留物品与容器空格的原版右键交互。</Description>
   <Assemblies><Assembly>RightClickClose.dll</Assembly></Assemblies>
   <Capabilities><Capability>reflection-external</Capability></Capabilities>

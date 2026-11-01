@@ -14,7 +14,7 @@ namespace RightClickClose
         {
             Enabled = true;
             ModCompatibility.Enable();
-            Debug.Log("[RightClickClose] Mouse shortcuts enabled v1.6.8");
+            Debug.Log("[RightClickClose] Mouse shortcuts enabled v1.6.9");
         }
         public void OnDisable()
         {
