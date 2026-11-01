@@ -19,9 +19,10 @@ namespace RightClickClose
             var shutter = StoreShutterButton.Instance;
             // PlayerStore.Instance lazily constructs a save; never access it from an unloaded shop/menu.
             if (store == null || shutter == null || MapUIManager.Instance == null) return false;
+            bool outside = MapUIManager.Instance.isOutside;
             var player = PlayerStore.Instance;
             if (player == null ||
-                MapUIManager.Instance.isOutside || store.isShootingMode || store.isMagnifyingMode ||
+                store.isShootingMode || store.isMagnifyingMode ||
                 player.cinematicMode || NegociationUIManager.IsTradeLocked() || Interactable.isPaused ||
                 Active(store.escapeUIManager?.menuPanel) || Active(store.closeShutterConfirmationPanel) ||
                 Active(store.confirmPanelUIManager?.panel) || Active(GenericConfirmationUIManager.Instance?.panel) ||
@@ -51,6 +52,8 @@ namespace RightClickClose
                     break;
                 }
                 if (current.GetComponent<StoreClientMono>() != null) { customer = true; break; }
+                if (outside && player.currentClientInstance != null && current.GetComponent<StoreTablet>() != null)
+                { customer = true; break; }
                 if (current.gameObject == shutter.shutterGameObject || current.gameObject == shutter.blockerGameObject ||
                     (shutter.blockerMaskObject != null && current.gameObject == shutter.blockerMaskObject.gameObject))
                 { shutterHit = true; break; }
@@ -60,13 +63,13 @@ namespace RightClickClose
             }
             if (hit != null && !customer && !shutterHit) return false;
 
-            if (!customer && !InsideShopWindow(shutter)) return false;
-            if (Shortcuts.Match(Shortcuts.SkipAnimation, out var skip) && ShopFlow.TrySkipAnimation(false))
+            if (outside ? !customer : !customer && !InsideShopWindow(shutter)) return false;
+            if (!outside && Shortcuts.Match(Shortcuts.SkipAnimation, out var skip) && ShopFlow.TrySkipAnimation(false))
             {
                 skip.Consume();
                 return true;
             }
-            if (Shortcuts.Match(Shortcuts.SkipCustomerAnimation, out var walk) && ShopFlow.TrySkipAnimation(true))
+            if (!outside && Shortcuts.Match(Shortcuts.SkipCustomerAnimation, out var walk) && ShopFlow.TrySkipAnimation(true))
             {
                 walk.Consume();
                 return true;
@@ -81,7 +84,7 @@ namespace RightClickClose
                 input.Consume();
                 bool forceDialogue = advance && next.Wheel && Shortcuts.ForceDialogue.Value;
                 if ((input.Wheel && !newScrollGesture && !forceDialogue) || !player.isClientArrived ||
-                    (StoreClientMono.Instance != null && StoreClientMono.Instance.IsMoving())) return true;
+                    (!outside && StoreClientMono.Instance != null && StoreClientMono.Instance.IsMoving())) return true;
                 var dialog = DialogUIManager.Instance;
                 if (dialog != null && (dialog.GetCurrentDialog() != null || dialog.IsChoice()))
                 {
@@ -100,6 +103,7 @@ namespace RightClickClose
                 return true;
             }
 
+            if (outside) return false;
             ConfigEntry<string> action;
             if (player.storeState == PlayerStore.StoreState.MORNING) action = Shortcuts.Open;
             else if (player.storeState != PlayerStore.StoreState.OPEN) return false;

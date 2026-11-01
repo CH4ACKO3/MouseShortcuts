@@ -10,6 +10,7 @@ Organize items, serve customers, and manage windows using just your mouse. Trade
 
 - Use the scroll wheel to move items between your main inventory, the trading counter, and the display window.
 - Move items between the ground and your backpack at night, and add or withdraw items when trading outside the shop.
+- Configure separate item routes for machine inputs, outputs, power slots, modules, and fridge chill/freezer compartments.
 - When you open a container, scroll actions prioritize that container.
 - Middle-click to pin or unpin an item.
 - Box-select multiple items to move them together with the scroll wheel, or pin and unpin the group with a middle-click.
@@ -18,12 +19,15 @@ Organize items, serve customers, and manage windows using just your mouse. Trade
 ## Customers and shop operations
 
 - Scroll down to advance dialogue quickly; right-click to confirm a deal.
+- At outdoor counters, use the trading tablet or dialogue bubble to advance dialogue or open trading with scroll down, and confirm a deal with right-click.
 - Scroll up to open shop, dismiss a customer and call the next one. With no customer at the counter, scroll up or down to call the next one, or close up normally once the queue is empty.
 - Keep scrolling to skip customer arrival, departure, and shutter animations.
 
 ## Windows
 
 Right-click a blank area with no existing interaction to close the window.
+
+Hold Alt while scrolling to use native panel scrolling. This binding is configurable.
 
 Bindings, item destinations, and feature toggles can be adjusted in the mod settings.
 

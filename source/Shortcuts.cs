@@ -7,7 +7,7 @@ namespace RightClickClose
     internal static class Shortcuts
     {
         internal static ConfigEntry<string> ItemForward, ItemBack, Pin, CustomerNext, CustomerTrade, Dismiss, Open, Call, Close, CloseWindow;
-        internal static ConfigEntry<string> SkipAnimation, SkipCustomerAnimation;
+        internal static ConfigEntry<string> SkipAnimation, SkipCustomerAnimation, PanelScroll;
         internal static ConfigEntry<bool> PreferContainer, AutoRotate, ForceDialogue;
         internal static ConfigEntry<float> DismissInterval;
         internal static readonly HashSet<KeyCode> ConsumedKeys = new HashSet<KeyCode>();
@@ -18,6 +18,7 @@ namespace RightClickClose
             ItemForward = Define(config, "item_forward", "WheelUp", "物品", "物品上方向快捷键");
             ItemBack = Define(config, "item_back", "WheelDown", "物品", "物品下方向快捷键");
             Pin = Define(config, "pin", "Mouse2", "物品", "固定／取消固定");
+            PanelScroll = Define(config, "panel_scroll", "Alt+WheelUp,Alt+WheelDown", "物品", "临时使用原版面板滚动");
             CustomerNext = Define(config, "customer_next", "Mouse1,WheelDown", "顾客与营业窗口", "推进对话／打开交易界面（不成交）");
             CustomerTrade = Define(config, "customer_trade", "Mouse1", "顾客与营业窗口", "对话结束后成交");
             SkipAnimation = Define(config, "skip_shop_animation", "WheelDown", "顾客与营业窗口", "跳过当前顾客进出／卷帘门动画");

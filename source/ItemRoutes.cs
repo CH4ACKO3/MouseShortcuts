@@ -2,7 +2,8 @@ namespace RightClickClose
 {
     internal static class ItemRoutes
     {
-        internal enum Destination { 不移动, 主物品栏, 出售柜台, 买入柜台, 展示窗, 垃圾桶, 外出背包, 外出地面, 人物货架, 人物待买区, 人物待卖区 }
+        internal enum Destination { 不移动, 主物品栏, 出售柜台, 买入柜台, 展示窗, 垃圾桶, 外出背包, 外出地面, 人物货架, 人物待买区, 人物待卖区,
+            机器原料区, 机器成品区, 机器电源槽, 机器模块区, 冰箱冷藏区, 冰箱冷冻区 }
 
         private static ConfigEntry<Destination>[] main, sale, display, purchase, pendingPurchase, other;
         private static ConfigEntry<Destination>[] ground, carried, outsideSale, outsideOther, merchantStock, merchantBuy, merchantSell;
@@ -22,9 +23,10 @@ namespace RightClickClose
             merchantStock = Define(config, "merchant_stock", "人物交易货架", Destination.不移动, Destination.人物待买区);
             merchantBuy = Define(config, "merchant_buy", "人物交易待买区", Destination.人物货架, Destination.不移动);
             merchantSell = Define(config, "merchant_sell", "人物交易待卖区", Destination.不移动, Destination.主物品栏);
+            MachineRoutes.Init(config);
         }
 
-        private static ConfigEntry<Destination>[] Define(ModConfig config, string key, string label, Destination up, Destination down)
+        internal static ConfigEntry<Destination>[] Define(ModConfig config, string key, string label, Destination up, Destination down)
             => new[]
             {
                 config.DefineEnum("route_" + key + "_up", up, "区域与滚轮目标", () => label + " ↑",
@@ -39,7 +41,7 @@ namespace RightClickClose
 
         internal static bool IsOutside => MapUIManager.Instance != null && MapUIManager.Instance.isOutside;
 
-        internal static GraphNodeStorage Resolve(GameItem item, bool up)
+        internal static GraphNodeStorage Resolve(GameItem item, bool up, out bool preferContainer)
         {
             var entry = EmporiumEntry.Instance;
             var source = item.parentInventory;
@@ -57,8 +59,12 @@ namespace RightClickClose
                 source == entry.frontInvinvElement ? purchase :
                 source == entry.backInvinvElement ? (GeneralHelper.IsItemOwned(item) ? sale : pendingPurchase) :
                 IsOutside ? outsideOther : other;
-            switch (route[up ? 0 : 1].Value)
+            var machineRoute = MachineRoutes.SourceRoute(item);
+            var target = (machineRoute ?? route)[up ? 0 : 1].Value;
+            preferContainer = machineRoute == null && !MachineRoutes.IsDestination(target);
+            switch (target)
             {
+                case Destination.不移动: return null;
                 case Destination.主物品栏: return IsOutside ? Backpack() : entry.invElement;
                 case Destination.出售柜台: return merchant != null ? merchant.barterSellInventory : Visible(entry.backInvinvElement);
                 case Destination.买入柜台: return Visible(entry.frontInvinvElement);
@@ -70,7 +76,7 @@ namespace RightClickClose
                 case Destination.人物货架: return merchant?.barterInventory;
                 case Destination.人物待买区: return merchant?.barterBuyInventory;
                 case Destination.人物待卖区: return merchant?.barterSellInventory;
-                default: return null;
+                default: return MachineRoutes.Resolve(item, target);
             }
         }
 

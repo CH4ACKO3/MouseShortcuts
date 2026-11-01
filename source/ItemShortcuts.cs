@@ -49,11 +49,11 @@ namespace RightClickClose
             var selection = ItemMultiSelectHandler.current;
             var targets = GetTargets(selection, item, inventory);
             if (targets.Count == 0) return item != null;
-            gesture.Consume();
             try
             {
                 if (pin)
                 {
+                    gesture.Consume();
                     bool pinned = targets.Exists(target => ItemPinHelper.MayPin(target) && !ItemPinHelper.IsPinned(target));
                     foreach (var target in targets)
                         if (IsLive(target) && ItemPinHelper.MayPin(target)) ItemPinHelper.SetPinned(target, pinned);
@@ -64,13 +64,15 @@ namespace RightClickClose
                     var merchant = ItemRoutes.Merchant;
                     var location = MapUIManager.Instance.Current;
                     var moves = targets.ConvertAll(target => (Item: target, Home: target.parentInventory, Amount: target.unitCount));
+                    bool handled = false;
                     foreach (var move in moves)
                     {
                         if (PlayerStore.Instance?.currentClientInstance != client || ItemRoutes.Merchant != merchant ||
                             MapUIManager.Instance.Current != location || NegociationUIManager.IsTradeLocked()) break;
                         if (IsLive(move.Item) && move.Item.parentInventory == move.Home)
-                            Move(move.Item, forward, move.Amount);
+                            handled |= Move(move.Item, forward, move.Amount);
                     }
+                    if (handled) gesture.Consume();
                 }
             }
             finally
@@ -104,40 +106,40 @@ namespace RightClickClose
             return item != null ? new List<GameItemElement> { item } : new List<GameItemElement>();
         }
 
-        private static void Move(GameItemElement item, bool forward, int amount)
+        private static bool Move(GameItemElement item, bool forward, int amount)
         {
-            if (ItemPinHelper.IsPinned(item) || !item.MayRemove()) return;
+            if (ItemPinHelper.IsPinned(item) || !item.MayRemove()) return false;
             amount = Math.Min(amount, item.MaxNumRemove());
-            if (amount < 1) return;
+            if (amount < 1) return false;
             var entry = EmporiumEntry.Instance;
             bool owned = GeneralHelper.IsItemOwned(item);
             bool pending = item.IsTag(GameCharacterItem.TAG_NOT_PURCHASED);
-            if (owned && !pending && forward && RecentContainers.TryStore(item, amount)) return;
-            var destination = ItemRoutes.Resolve(item, forward);
-            if (destination == null) return;
+            var destination = ItemRoutes.Resolve(item, forward, out bool preferContainer);
+            if (owned && !pending && forward && preferContainer && RecentContainers.TryStore(item, amount)) return true;
+            if (destination == null) return false;
             var merchant = ItemRoutes.Merchant;
             bool merchantPurchase = merchant != null &&
                 (item.parentInventory == merchant.barterInventory || item.parentInventory == merchant.barterBuyInventory);
             var client = PlayerStore.Instance?.currentClientInstance?.GetClientBlueprint();
             if (merchantPurchase)
             {
-                if (destination != merchant.barterInventory && destination != merchant.barterBuyInventory) return;
+                if (destination != merchant.barterInventory && destination != merchant.barterBuyInventory) return true;
             }
-            else if (pending) return;
+            else if (pending) return true;
             else if (!owned)
             {
                 if (client == null || client.isBusinessComplete ||
-                    (item.parentInventory != entry.frontInvinvElement && item.parentInventory != entry.backInvinvElement)) return;
+                    (item.parentInventory != entry.frontInvinvElement && item.parentInventory != entry.backInvinvElement)) return true;
                 // Barter rewards stay on the customer's side: native offers may inspect every back-counter item.
                 if (client.clientIntent == StoreClient.ClientIntent.BARTER)
                 {
                     if (destination == entry.backInvinvElement) NegociationUIManager.Instance.OpenUI();
-                    return;
+                    return true;
                 }
                 if (client.clientIntent != StoreClient.ClientIntent.SELL &&
-                    client.clientIntent != StoreClient.ClientIntent.SELLNBUY) return;
+                    client.clientIntent != StoreClient.ClientIntent.SELLNBUY) return true;
                 // Selecting a destination never grants ownership or bypasses the purchase step.
-                if (destination != entry.backInvinvElement && destination != entry.frontInvinvElement) return;
+                if (destination != entry.backInvinvElement && destination != entry.frontInvinvElement) return true;
             }
             if (item.parentInventory == destination)
             {
@@ -147,15 +149,16 @@ namespace RightClickClose
                     NegociationUIManager.Instance.UpdateUI(item);
                     NegociationUIManager.Instance.OpenUI();
                 }
-                return;
+                return true;
             }
-            if (destination == item || GraphUtils.FindParentEquals(destination, item)) return;
+            if (destination == item || GraphUtils.FindParentEquals(destination, item)) return true;
             var slot = destination.TryFindOneValidInventorySlot(item);
             if (slot == null || !slot.IsValid() || slot.numTransfer <= 0 ||
-                !GeneralHelper.MayPlayerInsertInto(slot.inventory)) return;
+                !GeneralHelper.MayPlayerInsertInto(slot.inventory)) return true;
             // Native transfer performs capacity/ownership checks and the counter's offer callbacks.
             if (slot.TryAcceptOnce(amount) > 0)
                 AudioManager.Instance.TryPlayOne(item.soundDragStart, item.soundDragEnd);
+            return true;
         }
     }
 

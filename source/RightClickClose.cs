@@ -14,7 +14,7 @@ namespace RightClickClose
         {
             Enabled = true;
             ModCompatibility.Enable();
-            Debug.Log("[RightClickClose] Mouse shortcuts enabled v1.6.9");
+            Debug.Log("[RightClickClose] Mouse shortcuts enabled v1.6.10");
         }
         public void OnDisable()
         {
@@ -58,6 +58,7 @@ namespace RightClickClose
             bool newScrollGesture = scroll != 0 && Time.unscaledTime - lastScrollTime > 0.3f;
             if (scroll != 0) lastScrollTime = Time.unscaledTime;
             if (!Mod.Enabled || (!Input.anyKeyDown && scroll == 0)) return;
+            if (scroll != 0 && Shortcuts.Match(Shortcuts.PanelScroll, out _)) return;
             if (EventSystem.current == null || KeyBindHelper.SuppressHotkeys || StoreUIManager.IsAnyTyping() ||
                 ItemPinHelper.BlocksClicks || MachineStorageCoordinator.IsBusy || HopperHelper.IsBusy ||
                 Input.GetMouseButton(0) || UIDragHandler.isDraggingAnyUI ||

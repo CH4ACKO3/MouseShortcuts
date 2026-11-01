@@ -10,6 +10,20 @@ namespace RightClickClose
         private static readonly List<PixelWindow> Opened = new List<PixelWindow>();
         internal static void Reset() => Opened.Clear();
 
+        internal static PixelWindow LatestMachine
+        {
+            get
+            {
+                for (int i = Opened.Count - 1; i >= 0; i--)
+                {
+                    var window = Opened[i];
+                    if (window.handler != null && window.handler.gameObject.activeInHierarchy && MachineRoutes.IsMachine(window))
+                        return window;
+                }
+                return null;
+            }
+        }
+
         internal static void OpenedWindow(PixelWindow window)
         {
             if (!Mod.Enabled || !window.canMove || window.parentItems.Count == 0 || !window.IsVisible()) return;
