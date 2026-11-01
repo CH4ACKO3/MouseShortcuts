@@ -29,7 +29,7 @@
 
 ## 安裝與設定
 
-從 [Releases](https://github.com/CH4ACKO3/MouseShortcuts/releases) 下載版本壓縮檔，將其中的 `RightClickClose` 資料夾放入遊戲的 `Mods` 目錄，重新啟動遊戲後在模組選單中啟用。已有本機版本時，覆蓋原資料夾，避免重複安裝。
+從 [Releases](https://github.com/CH4ACKO3/MouseShortcuts/releases) 下載版本壓縮檔，將其中的 `RightClickClose` 資料夾放入遊戲的 `Mods` 目錄，重新啟動遊戲後在模組選單中啟用。已有本機版本時，覆蓋原資料夾。
 
 在模組選單中選取本模組，點選齒輪圖示調整設定，套用後生效。詳細預設路線請見 [使用說明（簡體中文）](使用说明.txt)。
 
@@ -41,6 +41,6 @@
 ./Tools/Build.ps1 -GameDir 'D:/App/Steam/steamapps/common/Probably Stolen'
 ```
 
-產物位於 `artifacts/package`，僅封裝本模組，不包含遊戲組件。CI 建置所需的參考組件來自遊戲 1.00-REV6（Steam build 26337366），以加密方式儲存，金鑰僅供受信任的發布分支使用；外部貢獻者可使用自己的遊戲安裝進行建置。
+產物位於 `artifacts/package`。CI 建置所需的參考組件來自遊戲 1.00-REV6（Steam build 26337366），本機開發可使用自己的遊戲安裝進行建置。
 
 提交至 `main` 後會自動建置；`v版本號` 標籤會產生 GitHub Release，啟用工作坊發布後同步更新同一個項目。首次建立項目與自動發布設定請見 [發布說明（簡體中文）](docs/Publishing.md)。

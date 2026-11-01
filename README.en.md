@@ -29,7 +29,7 @@ This mod is still new and built around the controls I'm used to. There may still
 
 ## Installation and settings
 
-Download a version archive from [Releases](https://github.com/CH4ACKO3/MouseShortcuts/releases), extract its `RightClickClose` folder into the game's `Mods` directory, then restart the game and enable it in the mod menu. If you already have a local copy, overwrite its folder to avoid duplicate installations.
+Download a version archive from [Releases](https://github.com/CH4ACKO3/MouseShortcuts/releases), extract its `RightClickClose` folder into the game's `Mods` directory, then restart the game and enable it in the mod menu. If you already have a local copy, overwrite its folder.
 
 Select Mouse Shortcuts in the mod menu and click the gear icon to adjust its settings. Apply your changes for them to take effect. See the [usage guide (Simplified Chinese)](使用说明.txt) for the full default item routes.
 
@@ -41,6 +41,6 @@ Requires the .NET 8 SDK or newer, PowerShell 7, and an installed copy of the gam
 ./Tools/Build.ps1 -GameDir 'D:/App/Steam/steamapps/common/Probably Stolen'
 ```
 
-Output goes to `artifacts/package`. Packages contain only this mod, with no game assemblies. CI build references come from game version 1.00-REV6 (Steam build 26337366) and are stored encrypted, with the key available only to trusted release branches. External contributors can build against their own game installation.
+Output goes to `artifacts/package`. CI build references come from game version 1.00-REV6 (Steam build 26337366). For local development, build against your own game installation.
 
 Commits to `main` trigger a build. Tags in the form `v1.6.5` create a GitHub Release and, once Workshop publishing is enabled, update the same Workshop item. See the [publishing guide (Simplified Chinese)](docs/Publishing.md) for initial item creation and automated publishing setup.

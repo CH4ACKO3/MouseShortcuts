@@ -29,7 +29,7 @@
 
 ## 安装与设置
 
-从 [Releases](https://github.com/CH4ACKO3/MouseShortcuts/releases) 下载版本压缩包，将其中的 `RightClickClose` 文件夹放入游戏的 `Mods` 目录，重启游戏后在「改装件」中启用。已有本地版本时覆盖原文件夹，避免重复安装。
+从 [Releases](https://github.com/CH4ACKO3/MouseShortcuts/releases) 下载版本压缩包，将其中的 `RightClickClose` 文件夹放入游戏的 `Mods` 目录，重启游戏后在「改装件」中启用。已有本地版本时覆盖原文件夹。
 
 「改装件 → 鼠标快捷操作 → 齿轮设置」可调整配置，点击应用后生效。详细默认路线见 [使用说明](使用说明.txt)。
 
@@ -41,6 +41,6 @@
 ./Tools/Build.ps1 -GameDir 'D:/App/Steam/steamapps/common/Probably Stolen'
 ```
 
-产物位于 `artifacts/package`，仅打包本模组，不包含游戏程序集。CI 编译依赖来自游戏 1.00-REV6（Steam build 26337366），加密保存，密钥仅供受信任的发布分支使用；外部贡献者可用自己的游戏安装构建。
+产物位于 `artifacts/package`。CI 编译依赖来自游戏 1.00-REV6（Steam build 26337366），本地开发可用自己的游戏安装构建。
 
 `main` 提交自动构建；`v版本号` 标签生成 GitHub Release，启用工坊发布后同步更新同一条目。首次创建条目和自动发布配置见 [发布说明](docs/Publishing.md)。
