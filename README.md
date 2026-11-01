@@ -1,5 +1,7 @@
 # 鼠标快捷操作 / Mouse Shortcuts
 
+简体中文 | [繁體中文](README.zh-TW.md) | [English](README.en.md)
+
 只用鼠标完成物品整理、顾客接待和窗口操作。像一个真正的大佬一样交易。
 
 ## 物品操作

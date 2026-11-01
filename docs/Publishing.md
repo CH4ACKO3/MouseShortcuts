@@ -8,7 +8,7 @@
 2. 用自己的游戏安装运行 `Tools/Build.ps1`，在游戏里确认行为，再推送 `main`。重复本地打包前移走旧的 `artifacts/package`。
 3. 等待 Actions 构建通过，再推送相同版本的标签，例如 `v1.6.6`。工作流使用同一个构建产物生成 GitHub Release 和工坊更新。
 
-工坊介绍维护在 `docs/Description.zh-CN.bbcode`。`README.md` 保留相同介绍；游戏内简短描述在 `manifest.xml`。发布包只含模组 DLL、清单、使用说明和许可证。
+工坊介绍分别维护在 `docs/Description.zh-CN.bbcode`、`docs/Description.zh-TW.bbcode` 和 `docs/Description.en.bbcode`。对应 README 为 `README.md`、`README.zh-TW.md` 和 `README.en.md`，更新功能介绍时同步三种语言。当前上传脚本仍使用简体中文介绍；首次发布时需另外设置工坊的繁体中文和英文本地化介绍。游戏内简短描述在 `manifest.xml`。发布包只含模组 DLL、清单、使用说明和许可证。
 
 ## 首次工坊发布
 
