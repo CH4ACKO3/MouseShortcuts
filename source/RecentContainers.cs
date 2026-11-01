@@ -18,7 +18,7 @@ namespace RightClickClose
             Opened.Add(window);
         }
 
-        internal static bool TryStore(GameItemElement item)
+        internal static bool TryStore(GameItemElement item, int amount)
         {
             if (!Shortcuts.PreferContainer.Value) return false;
             for (int i = Opened.Count - 1; i >= 0; i--)
@@ -35,7 +35,7 @@ namespace RightClickClose
                     if (!GeneralHelper.MayPlayerInsertInto(inventory)) continue;
                     var slot = inventory.TryFindOneValidInventorySlot(item);
                     if (slot == null || !slot.IsValid() || slot.numTransfer <= 0) continue;
-                    if (slot.TryAcceptOnce(item.unitCount) > 0)
+                    if (slot.TryAcceptOnce(amount) > 0)
                     {
                         AudioManager.Instance.TryPlayOne(item.soundDragStart, item.soundDragEnd);
                         break;

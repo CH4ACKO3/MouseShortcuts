@@ -12,6 +12,8 @@
 
 ## 首次工坊发布
 
+封面使用 `artwork/preview.png`（1024×1024），像素原稿为 `artwork/mouse-cover-128.png`。构建时将封面加入上传包，发布时同步更新。
+
 首次创建条目时，将 `workshop.json` 中的 `publishedfileid` 设为 `0`，选择 `create-private`。Actions 的 `Build and release` 工作流提供三个手动操作：
 
 - `build`：构建和检查发布包。

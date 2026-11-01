@@ -13,7 +13,7 @@ namespace RightClickClose
         public void OnEnable()
         {
             Enabled = true;
-            Debug.Log("[RightClickClose] Mouse shortcuts enabled v1.6.5");
+            Debug.Log("[RightClickClose] Mouse shortcuts enabled v1.6.6");
         }
         public void OnDisable()
         {
@@ -59,6 +59,7 @@ namespace RightClickClose
             if (EventSystem.current == null || KeyBindHelper.SuppressHotkeys || StoreUIManager.IsAnyTyping() ||
                 ItemPinHelper.BlocksClicks || MachineStorageCoordinator.IsBusy || HopperHelper.IsBusy ||
                 Input.GetMouseButton(0) || UIDragHandler.isDraggingAnyUI ||
+                (ItemMultiSelectHandler.current != null && ItemMultiSelectHandler.current.IsGroupDragging) ||
                 (ItemMouseDragHandler.current != null && ItemMouseDragHandler.current.IsDraggingItem))
                 return;
 

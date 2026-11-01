@@ -20,12 +20,14 @@ $stage = "$package/RightClickClose"
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 Copy-Item "$root/artifacts/build/RightClickClose.dll", "$root/manifest.xml", "$root/使用说明.txt", "$root/LICENSE" $stage
 Copy-Item "$root/docs/Description.zh-CN.bbcode", "$root/workshop.json" $package
+Copy-Item "$root/artwork/preview.png" $package
 Copy-Item "$root/releases/$version.md" "$package/release-notes.md"
 $archive = "MouseShortcuts-$version.zip"
 Compress-Archive -LiteralPath $stage -DestinationPath "$package/$archive"
 $files = @(Get-ChildItem -LiteralPath $stage -File | Sort-Object Name | ForEach-Object { @{path=$_.Name; sha256=(Get-FileHash -LiteralPath $_.FullName).Hash} })
 @{version=$version; tag=$Tag; archive=$archive; archiveSha256=(Get-FileHash "$package/$archive").Hash; files=$files;
   descriptionSha256=(Get-FileHash "$package/Description.zh-CN.bbcode").Hash;
+  previewSha256=(Get-FileHash "$package/preview.png").Hash;
   notesSha256=(Get-FileHash "$package/release-notes.md").Hash;
   workshopSha256=(Get-FileHash "$package/workshop.json").Hash} | ConvertTo-Json -Depth 4 | Set-Content "$package/package.json" -Encoding utf8NoBOM
 Write-Host "Package ready: $package/$archive"

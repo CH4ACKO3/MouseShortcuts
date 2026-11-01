@@ -13,9 +13,11 @@ if (!$DryRun -and !$CheckOnly) {
 }
 foreach ($entry in @(
     @($m.archive, $m.archiveSha256), @('Description.zh-CN.bbcode', $m.descriptionSha256),
+    @('preview.png', $m.previewSha256),
     @('release-notes.md', $m.notesSha256), @('workshop.json', $m.workshopSha256))) {
     if ((Get-FileHash -LiteralPath "$root/$($entry[0])").Hash -cne $entry[1]) { throw "Checksum mismatch: $($entry[0])" }
 }
+if ((Get-Item "$root/preview.png").Length -ge 1MB) { throw 'Workshop preview must be smaller than 1 MB.' }
 $stage = "$root/RightClickClose"
 $expected = @('LICENSE','RightClickClose.dll','manifest.xml','使用说明.txt')
 if (@(Get-ChildItem $stage -File -Recurse).Count -ne $expected.Count -or $m.files.Count -ne $expected.Count) { throw 'Unexpected package contents.' }
@@ -28,6 +30,7 @@ if ($mod.Mod.ModVersion -cne $m.version -or $mod.Mod.ID -cne 'ch4acko3_right_cli
 function Escape-Vdf([string]$value) { $value.Replace('\','\\').Replace('"','\"').Replace("`r",'') }
 $fields = [ordered]@{
     appid=$w.appid; publishedfileid=$w.publishedfileid; contentfolder=$stage.Replace('\','/');
+    previewfile="$root/preview.png".Replace('\','/');
     title=$w.title; description=(Get-Content "$root/Description.zh-CN.bbcode" -Raw);
     changenote=(Get-Content "$root/release-notes.md" -Raw)
 }

@@ -9,6 +9,7 @@ Organize items, serve customers, and manage windows using just your mouse. Trade
 - Use the scroll wheel to move items between your main inventory, the trading counter, and the display window.
 - When you open a container, scroll actions prioritize that container.
 - Middle-click to pin or unpin an item.
+- Box-select multiple items to move them together with the scroll wheel, or pin and unpin the group with a middle-click.
 - Automatically try rotating a dragged item when it won't fit.
 
 ## Customers and shop operations

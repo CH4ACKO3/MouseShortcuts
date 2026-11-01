@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
@@ -5,6 +7,13 @@ namespace RightClickClose
 {
     internal static class ItemShortcuts
     {
+        private static readonly AccessTools.FieldRef<ItemMultiSelectHandler, List<GameItemElement>> SelectedItems =
+            AccessTools.FieldRefAccess<ItemMultiSelectHandler, List<GameItemElement>>("selectedItems");
+        private static readonly Action<ItemMultiSelectHandler> PruneSelection =
+            AccessTools.MethodDelegate<Action<ItemMultiSelectHandler>>(AccessTools.Method(typeof(ItemMultiSelectHandler), "PruneSelection"));
+        private static readonly Action<ItemMultiSelectHandler> RefreshSelection =
+            AccessTools.MethodDelegate<Action<ItemMultiSelectHandler>>(AccessTools.Method(typeof(ItemMultiSelectHandler), "RefreshSelectionHighlight"));
+
         internal static bool Handle(Transform hit)
         {
             var store = StoreUIManager.Instance;
@@ -15,41 +24,91 @@ namespace RightClickClose
                 return false;
 
             GameItemElement item = null;
+            GameInventory inventory = null;
             for (var current = hit; current != null; current = current.parent)
             {
                 var node = current.GetComponent<TreeNodeRender>();
                 if (RightClick.IsControl(current, node)) return false;
                 if (node == null) continue;
                 // Resolve only the foreground element; never reach through a panel to an item behind it.
-                item = node.FindParentElement() as GameItemElement;
+                var element = node.FindParentElement();
+                item = element as GameItemElement;
+                inventory = element as GameInventory;
                 break;
             }
-            if (item == null) return false;
-            if (item.IsDestroyed() || GeneralHelper.IsDisplayOnly(item)) return true;
+            if (item == null && inventory == null) return false;
+            if (item != null && !IsLive(item)) return true;
 
-            if (Shortcuts.Match(Shortcuts.Pin, out var pin))
+            bool pin = Shortcuts.Match(Shortcuts.Pin, out var gesture);
+            bool forward = false;
+            if (!pin)
             {
-                pin.Consume();
-                if (ItemPinHelper.MayPin(item)) ItemPinHelper.TogglePinned(item);
+                forward = Shortcuts.Match(Shortcuts.ItemForward, out gesture);
+                if (!forward && !Shortcuts.Match(Shortcuts.ItemBack, out gesture)) return item != null;
             }
-            else
+            var selection = ItemMultiSelectHandler.current;
+            var targets = GetTargets(selection, item, inventory);
+            if (targets.Count == 0) return item != null;
+            gesture.Consume();
+            try
             {
-                bool forward = Shortcuts.Match(Shortcuts.ItemForward, out var gesture);
-                if (forward || Shortcuts.Match(Shortcuts.ItemBack, out gesture))
+                if (pin)
                 {
-                    gesture.Consume();
-                    Move(item, forward);
+                    bool pinned = targets.Exists(target => ItemPinHelper.MayPin(target) && !ItemPinHelper.IsPinned(target));
+                    foreach (var target in targets)
+                        if (IsLive(target) && ItemPinHelper.MayPin(target)) ItemPinHelper.SetPinned(target, pinned);
+                }
+                else
+                {
+                    var client = PlayerStore.Instance?.currentClientInstance;
+                    var moves = targets.ConvertAll(target => (Item: target, Home: target.parentInventory, Amount: target.unitCount));
+                    foreach (var move in moves)
+                    {
+                        if (PlayerStore.Instance?.currentClientInstance != client || NegociationUIManager.IsTradeLocked()) break;
+                        if (IsLive(move.Item) && move.Item.parentInventory == move.Home)
+                            Move(move.Item, forward, move.Amount);
+                    }
+                }
+            }
+            finally
+            {
+                if (selection != null && selection.HasSelection)
+                {
+                    PruneSelection(selection);
+                    if (selection.HasSelection) RefreshSelection(selection);
                 }
             }
             return true;
         }
 
-        private static void Move(GameItemElement item, bool forward)
+        private static bool IsLive(GameItemElement item)
+            => item != null && !item.IsDestroyed() && item.parentInventory != null &&
+               item.handler != null && item.handler.gameObject.activeInHierarchy && !GeneralHelper.IsDisplayOnly(item);
+
+        private static List<GameItemElement> GetTargets(ItemMultiSelectHandler selection, GameItemElement item, GameInventory inventory)
+        {
+            if (selection != null && selection.enabled && selection.HasSelection &&
+                !selection.IsGroupDragging && !Input.GetKey(selection.key))
+            {
+                PruneSelection(selection);
+                var selected = SelectedItems(selection);
+                if (item != null ? selected.Contains(item) : selected.Exists(target => IsLive(target) && target.parentInventory == inventory))
+                {
+                    // Transfers can merge/destroy items and change the native selection during callbacks.
+                    return selected.FindAll(IsLive);
+                }
+            }
+            return item != null ? new List<GameItemElement> { item } : new List<GameItemElement>();
+        }
+
+        private static void Move(GameItemElement item, bool forward, int amount)
         {
             if (ItemPinHelper.IsPinned(item) || !item.MayRemove()) return;
+            amount = Math.Min(amount, item.MaxNumRemove());
+            if (amount < 1) return;
             var entry = EmporiumEntry.Instance;
             bool owned = GeneralHelper.IsItemOwned(item);
-            if (owned && forward && RecentContainers.TryStore(item)) return;
+            if (owned && forward && RecentContainers.TryStore(item, amount)) return;
             var destination = ItemRoutes.Resolve(item, forward);
             if (destination == null) return;
             var client = PlayerStore.Instance?.currentClientInstance?.GetClientBlueprint();
@@ -82,7 +141,7 @@ namespace RightClickClose
             var slot = destination.TryFindOneValidInventorySlot(item);
             if (slot == null || !slot.IsValid() || slot.numTransfer <= 0) return;
             // Native transfer performs capacity/ownership checks and the counter's offer callbacks.
-            if (slot.TryAcceptOnce(item.unitCount) > 0)
+            if (slot.TryAcceptOnce(amount) > 0)
                 AudioManager.Instance.TryPlayOne(item.soundDragStart, item.soundDragEnd);
         }
     }
