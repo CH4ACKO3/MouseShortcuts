@@ -1,0 +1,121 @@
+name: Build and release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Build, check Steam login, or create the first private Workshop item
+        type: choice
+        options: [build, verify-steam, create-private]
+        default: build
+permissions:
+  contents: read
+concurrency:
+  group: mouse-shortcuts-release
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore private build references
+        shell: pwsh
+        env:
+          BUILD_REFERENCES_KEY: ${{ secrets.BUILD_REFERENCES_KEY }}
+        run: ./Tools/References.ps1 -ManagedDir "$env:RUNNER_TEMP/managed"
+      - name: Build and package
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          ./Tools/Build.ps1 -ManagedDir "$env:RUNNER_TEMP/managed" -Tag $env:RELEASE_TAG
+          ./Tools/PublishWorkshop.ps1 -ArtifactRoot artifacts/package -DryRun
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: workshop-package
+          path: artifacts/package/
+          if-no-files-found: error
+          retention-days: 30
+  github-release:
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: workshop-package
+          path: package
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $m = Get-Content package/package.json -Raw | ConvertFrom-Json
+          $zip = Join-Path package $m.archive
+          if ($m.tag -cne $env:RELEASE_TAG -or (Get-FileHash $zip).Hash -cne $m.archiveSha256) { throw 'Release artifact mismatch.' }
+          gh release view $env:RELEASE_TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:RELEASE_TAG $zip package/package.json --clobber
+          } else {
+            gh release create $env:RELEASE_TAG $zip package/package.json --verify-tag --title "Mouse Shortcuts $($m.version)" --notes-file package/release-notes.md
+          }
+          if ($LASTEXITCODE) { throw 'GitHub Release failed.' }
+  steam-workshop:
+    needs: [build, github-release]
+    if: >-
+      always() && needs.build.result == 'success' &&
+      ((github.event_name == 'push' && needs.github-release.result == 'success' && vars.STEAM_PUBLISH_ENABLED == 'true') ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.operation != 'build'))
+    runs-on: windows-latest
+    timeout-minutes: 15
+    environment: steam-workshop
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: workshop-package
+          path: artifacts/package
+      - name: Publish or check Steam
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_CONFIG_VDF_BASE64: ${{ secrets.STEAM_CONFIG_VDF_BASE64 }}
+          STEAM_SESSION_KEY: ${{ secrets.STEAM_SESSION_KEY }}
+          STEAM_SESSION_OUTPUT: ${{ runner.temp }}/mouse-shortcuts-session.json
+          OPERATION: ${{ inputs.operation }}
+        run: |
+          ./Tools/PublishWorkshop.ps1 -ArtifactRoot artifacts/package -CheckOnly:($env:OPERATION -eq 'verify-steam') -CreatePrivate:($env:OPERATION -eq 'create-private')
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: steam-session-state
+          path: ${{ runner.temp }}/mouse-shortcuts-session.json
+          if-no-files-found: ignore
+          retention-days: 90
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && inputs.operation == 'create-private'
+        with:
+          name: created-workshop-id
+          path: artifacts/package/created-workshop-id.txt
+          if-no-files-found: ignore

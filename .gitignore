@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+artifacts/
+*.dll
+*.pdb
+*.zip
+*.vdf
+*.key
+实测流程.txt
