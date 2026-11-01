@@ -23,13 +23,14 @@ namespace RightClickClose
             var player = PlayerStore.Instance;
             if (player == null ||
                 store.isShootingMode || store.isMagnifyingMode ||
-                player.cinematicMode || NegociationUIManager.IsTradeLocked() || Interactable.isPaused ||
+                player.cinematicMode || Interactable.isPaused ||
                 Active(store.escapeUIManager?.menuPanel) || Active(store.closeShutterConfirmationPanel) ||
                 Active(store.confirmPanelUIManager?.panel) || Active(GenericConfirmationUIManager.Instance?.panel) ||
                 (store.gameOptionUIManager != null && store.gameOptionUIManager.IsOpen) ||
                 (EndOfDayUIManager.Instance != null && EndOfDayUIManager.Instance.IsOpen))
                 return false;
 
+            bool tradeLocked = NegociationUIManager.IsTradeLocked();
             var negotiation = NegociationUIManager.Instance;
             var frame = negotiation != null ? Frame.GetValue(negotiation) as NegotiationTabletFrame : null;
             if (frame != null && Active(frame.confirmRoot)) return false;
@@ -42,7 +43,7 @@ namespace RightClickClose
             {
                 if (current.GetComponent<TreeNodeRender>() != null) return false;
                 // SpeedUp can make this background raycastable for its left-click dialogue shortcut.
-                if (conversation != null && player.currentClientInstance != null &&
+                if (conversation != null && (player.currentClientInstance != null || conversation.isSecMonologuePlaying) &&
                     (IsBubbleBackground(current, conversation.clientBubble) ||
                      IsBubbleBackground(current, conversation.playerBubble) ||
                      IsBubbleBackground(current, conversation.secBubble)))
@@ -51,7 +52,10 @@ namespace RightClickClose
                     customer = true;
                     break;
                 }
-                if (current.GetComponent<StoreClientMono>() != null) { customer = true; break; }
+                if (current.GetComponent<StoreClientMono>() != null ||
+                    (store.secGameObject != null && current.gameObject == store.secGameObject.gameObject) ||
+                    (store.secGameObject2 != null && current.gameObject == store.secGameObject2.gameObject))
+                { customer = true; break; }
                 if (outside && player.currentClientInstance != null && current.GetComponent<StoreTablet>() != null)
                 { customer = true; break; }
                 if (current.gameObject == shutter.shutterGameObject || current.gameObject == shutter.blockerGameObject ||
@@ -64,27 +68,29 @@ namespace RightClickClose
             if (hit != null && !customer && !shutterHit) return false;
 
             if (outside ? !customer : !customer && !InsideShopWindow(shutter)) return false;
-            if (!outside && Shortcuts.Match(Shortcuts.SkipAnimation, out var skip) && ShopFlow.TrySkipAnimation(false))
+            if (!outside && !tradeLocked && Shortcuts.Match(Shortcuts.SkipAnimation, out var skip) && ShopFlow.TrySkipAnimation(false))
             {
                 skip.Consume();
                 return true;
             }
-            if (!outside && Shortcuts.Match(Shortcuts.SkipCustomerAnimation, out var walk) && ShopFlow.TrySkipAnimation(true))
+            if (!outside && !tradeLocked && Shortcuts.Match(Shortcuts.SkipCustomerAnimation, out var walk) && ShopFlow.TrySkipAnimation(true))
             {
                 walk.Consume();
                 return true;
             }
-            if (store.isAboutToStartMainDialog || ItemMouseDragHandler.current == null || !ItemMouseDragHandler.current.enabled)
-                return false;
+            bool securityDialogue = tradeLocked && conversation != null && conversation.GetCurrentDialog() != null;
+            if (store.isAboutToStartMainDialog || (!securityDialogue &&
+                (ItemMouseDragHandler.current == null || !ItemMouseDragHandler.current.enabled))) return false;
             bool advance = Shortcuts.Match(Shortcuts.CustomerNext, out var next);
             bool trade = Shortcuts.Match(Shortcuts.CustomerTrade, out var confirm);
-            if (player.currentClientInstance != null && (advance || trade))
+            if ((player.currentClientInstance != null || conversation?.isSecMonologuePlaying == true) && (advance || trade))
             {
                 var input = advance ? next : confirm;
                 input.Consume();
                 bool forceDialogue = advance && next.Wheel && Shortcuts.ForceDialogue.Value;
-                if ((input.Wheel && !newScrollGesture && !forceDialogue) || !player.isClientArrived ||
-                    (!outside && StoreClientMono.Instance != null && StoreClientMono.Instance.IsMoving())) return true;
+                if ((input.Wheel && !newScrollGesture && !forceDialogue) || (!securityDialogue &&
+                    (!player.isClientArrived || (!outside && StoreClientMono.Instance != null && StoreClientMono.Instance.IsMoving()))))
+                    return true;
                 var dialog = DialogUIManager.Instance;
                 if (dialog != null && (dialog.GetCurrentDialog() != null || dialog.IsChoice()))
                 {
@@ -99,11 +105,11 @@ namespace RightClickClose
                         }
                     }
                 }
-                else OpenTrade(negotiation, trade);
+                else if (!tradeLocked) OpenTrade(negotiation, trade);
                 return true;
             }
 
-            if (outside) return false;
+            if (outside || tradeLocked) return false;
             ConfigEntry<string> action;
             if (player.storeState == PlayerStore.StoreState.MORNING) action = Shortcuts.Open;
             else if (player.storeState != PlayerStore.StoreState.OPEN) return false;
