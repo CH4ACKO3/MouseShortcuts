@@ -28,6 +28,15 @@ Bindings, item destinations, and feature toggles can be adjusted in the mod sett
 
 This mod is still new and built around the controls I'm used to. There may still be bugs, missing features, or awkward controls. Feel free to point them out in the comments.
 
+## Mod compatibility and conflicts
+
+QuickTrade restocking and Easier Item Dragging and Swapping leave pinned items in place. With SpeedUp’s clickable bubbles enabled, you can still use the wheel and right-click on customer conversation bubbles.
+
+The following mods have overlapping mouse controls. Choose one of them or Mouse Shortcuts:
+
+- [更舒适的操作方式 / More Comfortable Controls](https://steamcommunity.com/sharedfiles/filedetails/?id=3830303483): Its right-click window closing and scroll-wheel tool menu conflict with this mod.
+- [操作优化 / Operation Optimizer](https://steamcommunity.com/sharedfiles/filedetails/?id=3830112685): Enabling middle-click dialogue advance also triggers item pinning on the same click.
+
 ---
 
 ## Installation and settings

@@ -28,6 +28,15 @@
 
 这个模组还很新，而且只做成了我习惯的交互方式，可能仍有bug或者没覆盖的功能、反人类的操作，欢迎评论区提出。
 
+## 模组兼容与冲突
+
+QuickTrade 补货和「更方便的拖动物品」交换会保留固定物品；「加速」开启点击气泡后，仍可在对话气泡上使用滚轮和右键。
+
+以下模组存在鼠标操作重叠，建议与本模组择一启用：
+
+- [更舒适的操作方式](https://steamcommunity.com/sharedfiles/filedetails/?id=3830303483)：右键关窗、滚轮工具轮盘与本模组冲突。
+- [操作优化 / Operation Optimizer](https://steamcommunity.com/sharedfiles/filedetails/?id=3830112685)：启用中键推进时，会与中键固定物品同时触发。
+
 ---
 
 ## 安装与设置

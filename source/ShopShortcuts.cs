@@ -36,9 +36,20 @@ namespace RightClickClose
             // Only the foreground hit can be a customer. Any item, control or floating UI blocks the shop behind it.
             bool customer = false;
             bool shutterHit = false;
+            var conversation = DialogUIManager.Instance;
             for (var current = hit; current != null; current = current.parent)
             {
                 if (current.GetComponent<TreeNodeRender>() != null) return false;
+                // SpeedUp can make this background raycastable for its left-click dialogue shortcut.
+                if (conversation != null && player.currentClientInstance != null &&
+                    (IsBubbleBackground(current, conversation.clientBubble) ||
+                     IsBubbleBackground(current, conversation.playerBubble) ||
+                     IsBubbleBackground(current, conversation.secBubble)))
+                {
+                    if (RightClick.IsControl(current, null)) return false;
+                    customer = true;
+                    break;
+                }
                 if (current.GetComponent<StoreClientMono>() != null) { customer = true; break; }
                 if (current.gameObject == shutter.shutterGameObject || current.gameObject == shutter.blockerGameObject ||
                     (shutter.blockerMaskObject != null && current.gameObject == shutter.blockerMaskObject.gameObject))
@@ -122,6 +133,9 @@ namespace RightClickClose
         }
 
         private static bool Active(GameObject obj) => obj != null && obj.activeInHierarchy;
+
+        private static bool IsBubbleBackground(Transform hit, TextBubble bubble) =>
+            bubble != null && bubble.backgroundImage != null && hit.gameObject == bubble.backgroundImage.gameObject;
 
         private static void RingBell()
         {
