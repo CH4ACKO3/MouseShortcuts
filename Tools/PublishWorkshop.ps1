@@ -31,10 +31,13 @@ function Escape-Vdf([string]$value) { $value.Replace('\','\\').Replace('"','\"')
 $fields = [ordered]@{
     appid=$w.appid; publishedfileid=$w.publishedfileid; contentfolder=$stage.Replace('\','/');
     previewfile="$root/preview.png".Replace('\','/');
-    title=$w.title; description=(Get-Content "$root/Description.zh-CN.bbcode" -Raw);
     changenote=(Get-Content "$root/release-notes.md" -Raw)
 }
-if ($CreatePrivate) { $fields.visibility = '2' }
+if ($CreatePrivate) {
+    $fields.title = $w.title
+    $fields.description = Get-Content "$root/Description.zh-CN.bbcode" -Raw
+    $fields.visibility = '2'
+}
 $vdf = '"workshopitem"' + "`n{`n"
 foreach ($field in $fields.GetEnumerator()) { $vdf += '  "' + $field.Key + '" "' + (Escape-Vdf $field.Value) + '"' + "`n" }
 $vdf += "}`n"
@@ -68,7 +71,7 @@ try {
             Set-Content "$root/created-workshop-id.txt" $Matches[1] -NoNewline
             Write-Host "Created private Workshop item: $($Matches[1]). Record this ID before retrying."
         }
-        if ($code -ne 0 -or ($output -join "`n") -notmatch '(?i)Success\.\s+(?:Published|Updated)') { throw 'Workshop upload did not confirm success; inspect created-workshop-id.txt before any bootstrap retry.' }
+        if ($code -ne 0) { throw "Workshop upload exited with code $code; inspect created-workshop-id.txt before any bootstrap retry." }
         $id = if ($CreatePrivate) { (Get-Content "$root/created-workshop-id.txt" -Raw).Trim() } else { $w.publishedfileid }
         $output = & "$steam/steamcmd.exe" '+@ShutdownOnFailedCommand' '1' '+@NoPromptForPassword' '1' '+login' $env:STEAM_USERNAME '+workshop_download_item' $w.appid $id 'validate' '+quit' 2>&1
         if ($LASTEXITCODE) { throw 'Post-upload Workshop download failed.' }

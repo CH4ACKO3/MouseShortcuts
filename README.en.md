@@ -1,5 +1,7 @@
 # Mouse Shortcuts
 
+[Subscribe on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3831369892)
+
 [简体中文](README.md) | [繁體中文](README.zh-TW.md) | English
 
 Organize items, serve customers, and manage windows using just your mouse. Trade like a real boss.

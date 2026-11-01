@@ -2,6 +2,8 @@
 
 简体中文 | [繁體中文](README.zh-TW.md) | [English](README.en.md)
 
+[创意工坊订阅](https://steamcommunity.com/sharedfiles/filedetails/?id=3831369892)
+
 只用鼠标完成物品整理、顾客接待和窗口操作。像一个真正的大佬一样交易。
 
 ## 物品操作

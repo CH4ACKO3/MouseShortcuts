@@ -1,5 +1,7 @@
 # 滑鼠快捷操作 / Mouse Shortcuts
 
+[創意工坊訂閱](https://steamcommunity.com/sharedfiles/filedetails/?id=3831369892)
+
 [简体中文](README.md) | 繁體中文 | [English](README.en.md)
 
 只用滑鼠完成物品整理、顧客接待和視窗操作。像一個真正的大佬一樣交易。
