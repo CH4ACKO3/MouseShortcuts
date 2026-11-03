@@ -14,7 +14,7 @@ namespace RightClickClose
         {
             Enabled = true;
             ModCompatibility.Enable();
-            Debug.Log("[RightClickClose] Mouse shortcuts enabled v1.6.11");
+            Debug.Log("[RightClickClose] Mouse shortcuts enabled v1.6.12");
         }
         public void OnDisable()
         {
@@ -95,6 +95,7 @@ namespace RightClickClose
 
         private static bool CloseTarget(Transform hit)
         {
+            var news = NewsUIManager.Instance;
             for (var current = hit; current != null; current = current.parent)
             {
                 var node = current.GetComponent<TreeNodeRender>();
@@ -105,6 +106,14 @@ namespace RightClickClose
                     (node.eventHandler.mouseClickFunc.Count > 0 ||
                      (node.eventHandler.mouseDownFunc.Count > 0 && !IsWindowBackground(node)) ||
                      node.eventHandler.mouseUpFunc.Count > 0)) return false;
+                // News articles use a Button/InteractableUI for selection; closing uses the newspaper's own cleanup.
+                if (news != null && news.uiGameObject != null && news.uiGameObject.activeInHierarchy &&
+                    (current.gameObject == news.uiGameObject || (current.GetComponent<NewsUIElement>() != null &&
+                        current.IsChildOf(news.uiGameObject.transform))))
+                {
+                    news.CloseUI();
+                    return true;
+                }
                 if (IsControl(current, node)) return false;
                 if (node != null && node.window != null)
                 {
