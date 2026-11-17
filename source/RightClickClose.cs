@@ -144,7 +144,7 @@ namespace RightClickClose
                             case GameOptionUIManager.WINDOW_ID:
                                 GameOptionUIManager.Instance.CloseUI(); break;
                             case EndOfDayUIManager.WINDOW_ID:
-                                EndOfDayUIManager.Instance.CloseUI(); break;
+                                EndOfDayUIManager.Instance.OnCloseButtonClick(); break;
                             case BargainUIManager.WINDOW_ID:
                                 BargainUIManager.Instance.CloseUI(); break;
                             default:
@@ -177,7 +177,7 @@ namespace RightClickClose
                 }
                 if (EndOfDayUIManager.Instance != null && current.gameObject == EndOfDayUIManager.Instance.UI)
                 {
-                    EndOfDayUIManager.Instance.CloseUI();
+                    EndOfDayUIManager.Instance.OnCloseButtonClick();
                     return true;
                 }
                 if (BargainUIManager.Instance != null && current.gameObject == BargainUIManager.Instance.uiObject)
